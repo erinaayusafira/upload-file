@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Multiple Upload</title>
+    <script src="static/jquery-3.4.1.min.js"></script>
+    <script>
+        $(function () { //mulai membangun formdata
+            $("#user-form").on("submit", function (e) {
+                e.preventDefault();
+
+                var $self = $(this);
+                var files = $("#upload-file")[0].files; //isi array dari semua file yg dipilih user
+                var formData = new FormData();
+
+                for (var i = 0; i < files.length; i++) {
+                    formData.append("files", files[i]);
+                }
+
+                $.ajax({
+                    url: $self.attr("action"),
+                    type: $self.attr("method"),
+                    data: formData,
+                    processData: false,// agar data yang akan di kirim tidak 
+                    //otomatis dikonversi ke query string atau json string
+                    contentType: false, //agar header Content-Type 
+                    //yang dikirim bisa menyesuaikan data yang disisipkan.
+                }).then(function (res) {
+                    alert(res);
+                    $("#user-form").trigger("reset");
+                }).catch(function (a) {
+                    alert("ERROR: " + a.responseText);
+                });
+            });
+        });
+        function Yo() {
+            var self = this;
+            var $ul = document.getElementById("list-files");
+
+            var renderData = function (res) {
+                res.forEach(function (each) {
+                    var $li = document.createElement("li");
+                    var $a = document.createElement("a");
+
+                    $li.innerText = "download ";
+                    $li.appendChild($a);
+                    $ul.appendChild($li);
+
+                    $a.href = "/download?path=" + encodeURI(each.path);
+                    $a.innerText = each.filename;
+                    $a.target = "_blank";
+                });
+            };
+
+            var getAllListFiles = function () {
+                var xhr = new XMLHttpRequest();
+                xhr.open("GET", "/list-files");
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState == 4 && xhr.status == 200) {
+                        var json = JSON.parse(xhr.responseText);
+                        renderData(json);
+                    }
+                };
+                xhr.send();
+            };
+
+            self.init = function () {
+                getAllListFiles();
+            };
+        };
+
+        window.onload = function () {
+            new Yo().init();
+        };
+    </script>
+</head>
+
+<body>
+    <form action="/upload" id="user-form" method="post">
+        <input required multiple id="upload-file" type="file">
+        <br>
+        <br>
+        <!-- /handler event ini proses mulai pembentukan objek formdata  -->
+        <button id="btn-upload" type="submit">Upload!</button>
+        <!-- </form> -->
+        <form action="/list-files" method="get"></form>
+        <ul id="list-files"></ul>
+    </form>
+</body>
+
+</html>
